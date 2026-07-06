@@ -1,0 +1,1608 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Kas Besar & Kas Kecil</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface-2: #273549;
+        --border: #334155;
+        --text: #e2e8f0;
+        --text-dim: #94a3b8;
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --green: #22c55e;
+        --red: #ef4444;
+        --orange: #f59e0b;
+        --radius: 10px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.6rem;
+        background: linear-gradient(90deg, #818cf8, #22c55e);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+
+      .user-chip {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+      }
+
+      .card .label {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+      }
+
+      .card .value {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+
+      .card.besar .value {
+        color: #818cf8;
+      }
+      .card.kecil .value {
+        color: var(--orange);
+      }
+      .card.total .value {
+        color: var(--green);
+      }
+
+      section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      section h2 {
+        margin: 0 0 16px;
+        font-size: 1.05rem;
+        color: var(--text);
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr 1.4fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .field label {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+
+      input,
+      select {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 9px 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        width: 100%;
+        min-height: 44px;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        min-height: 44px;
+        transition:
+          transform 0.1s ease,
+          opacity 0.1s ease,
+          background 0.15s ease;
+        font-family: inherit;
+      }
+
+      button:active {
+        transform: scale(0.96);
+        opacity: 0.85;
+      }
+
+      .toggle-tipe {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .toggle-tipe input {
+        display: none;
+      }
+
+      .toggle-tipe label {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 9px 6px;
+        min-height: 44px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        background: var(--surface-2);
+        color: var(--text-dim);
+        transition: 0.15s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      .toggle-tipe label:active {
+        opacity: 0.8;
+      }
+
+      .toggle-tipe input:checked + label.tambah {
+        background: var(--green);
+        color: #052e10;
+        font-weight: 600;
+      }
+      .toggle-tipe input:checked + label.kurang {
+        background: var(--red);
+        color: #3a0a0a;
+        font-weight: 600;
+      }
+
+      button.btn-submit,
+      button.btn-primary {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      button.btn-submit:hover,
+      button.btn-primary:hover {
+        background: var(--primary-dark);
+      }
+
+      button.btn-secondary {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      button.btn-secondary:hover {
+        border-color: var(--primary);
+        color: #fff;
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .filters button {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .filters button:hover {
+        color: var(--text);
+      }
+
+      .filters button.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+
+      .chart-box {
+        position: relative;
+        height: 320px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.87rem;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+
+      th {
+        color: var(--text-dim);
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      tbody tr:hover {
+        background: var(--surface-2);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .badge.besar {
+        background: rgba(99, 102, 241, 0.15);
+        color: #a5b4fc;
+      }
+      .badge.kecil {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fcd34d;
+      }
+      .badge.tambah {
+        background: rgba(34, 197, 94, 0.15);
+        color: #86efac;
+      }
+      .badge.kurang {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+      }
+      .badge.admin {
+        background: rgba(129, 140, 248, 0.2);
+        color: #a5b4fc;
+      }
+      .badge.user {
+        background: rgba(148, 163, 184, 0.2);
+        color: #cbd5e1;
+      }
+
+      .nominal.tambah {
+        color: var(--green);
+        font-weight: 600;
+      }
+      .nominal.kurang {
+        color: var(--red);
+        font-weight: 600;
+      }
+
+      .btn-del,
+      .btn-small {
+        background: transparent;
+        border: 1px solid var(--red);
+        color: var(--red);
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+      }
+
+      .btn-del:hover {
+        background: var(--red);
+        color: #fff;
+      }
+
+      .btn-small.edit {
+        border-color: var(--primary);
+        color: var(--primary);
+        margin-right: 6px;
+      }
+      .btn-small.edit:hover {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .empty-row td {
+        text-align: center;
+        color: var(--text-dim);
+        padding: 24px;
+      }
+
+      /* ---------- Modal (Kelola User) ---------- */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+
+      .modal-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 88vh;
+        overflow-y: auto;
+      }
+
+      .modal-box h2 {
+        margin: 0 0 16px;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-close {
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1.3rem;
+        cursor: pointer;
+        line-height: 1;
+        min-height: auto;
+        padding: 4px 8px;
+      }
+
+      .modal-close:hover {
+        color: var(--text);
+      }
+
+      .user-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .user-row .uname {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .user-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .add-user-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 8px;
+        margin-top: 18px;
+        align-items: end;
+      }
+
+      .msg-box {
+        font-size: 0.82rem;
+        min-height: 18px;
+        margin-top: 8px;
+      }
+      .msg-box.error {
+        color: var(--red);
+      }
+      .msg-box.success {
+        color: var(--green);
+      }
+
+      @media (max-width: 860px) and (min-width: 769px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        form {
+          grid-template-columns: 1fr 1fr;
+        }
+        form .field:nth-child(2) {
+          grid-column: 1 / -1;
+        }
+        button.btn-submit {
+          grid-column: 1 / -1;
+        }
+      }
+
+      /* ---------- Mobile (<=768px) ---------- */
+      @media (max-width: 768px) {
+        body {
+          padding: 12px;
+        }
+
+        header h1 {
+          font-size: 1.3rem;
+        }
+        header p {
+          font-size: 0.8rem;
+        }
+
+        .topbar {
+          justify-content: stretch;
+          flex-direction: column;
+        }
+        .topbar button,
+        .topbar .user-chip {
+          width: 100%;
+        }
+
+        .cards {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        section {
+          padding: 14px;
+        }
+
+        form {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .field {
+          width: 100%;
+        }
+
+        input,
+        select {
+          width: 100%;
+        }
+
+        button.btn-submit {
+          width: 100%;
+        }
+
+        .filters {
+          flex-direction: column;
+          gap: 6px;
+        }
+        .filters button {
+          width: 100%;
+        }
+
+        .table-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        table {
+          min-width: 640px;
+        }
+
+        .chart-box {
+          height: 260px;
+        }
+
+        .add-user-form {
+          grid-template-columns: 1fr;
+        }
+        .add-user-form button {
+          width: 100%;
+        }
+
+        .user-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .user-actions button {
+          width: 100%;
+        }
+      }
+
+      .login-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px 28px;
+        width: 100%;
+        max-width: 340px;
+      }
+
+      .login-box h1 {
+        margin: 0 0 4px;
+        font-size: 1.3rem;
+        text-align: center;
+        background: linear-gradient(90deg, #818cf8, #22c55e);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .login-box p {
+        margin: 0 0 20px;
+        text-align: center;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+      }
+
+      .login-box .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 14px;
+      }
+
+      .login-box label {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+
+      .login-error {
+        color: var(--red);
+        font-size: 0.82rem;
+        text-align: center;
+        min-height: 18px;
+        margin-bottom: 8px;
+      }
+
+      .login-box button {
+        width: 100%;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-box button:hover {
+        background: var(--primary-dark);
+      }
+
+      .btn-logout {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-logout:hover {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-screen" class="login-screen">
+      <div class="login-box">
+        <h1>Aplikasi Kas</h1>
+        <p>Silakan login untuk melanjutkan</p>
+        <form id="form-login">
+          <div class="field">
+            <label for="login-username">Username</label>
+            <input
+              type="text"
+              id="login-username"
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input
+              type="password"
+              id="login-password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <div class="login-error" id="login-error"></div>
+          <button type="submit">Masuk</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="wrap" id="main-content" style="display: none">
+      <div class="topbar">
+        <span class="user-chip" id="user-chip"></span>
+        <button
+          id="btn-kelola-user"
+          class="btn-secondary"
+          style="display: none"
+        >
+          Kelola User
+        </button>
+        <button id="btn-logout" class="btn-logout">Logout</button>
+      </div>
+
+      <header>
+        <h1>Aplikasi Kas Besar & Kas Kecil</h1>
+        <p>Catat transaksi, pantau saldo, dan lihat tren kas secara otomatis</p>
+      </header>
+
+      <div class="cards">
+        <div class="card besar">
+          <div class="label">Saldo Kas Besar</div>
+          <div class="value" id="saldoBesar">Rp 0</div>
+        </div>
+        <div class="card kecil">
+          <div class="label">Saldo Kas Kecil</div>
+          <div class="value" id="saldoKecil">Rp 0</div>
+        </div>
+        <div class="card total">
+          <div class="label">Total Saldo</div>
+          <div class="value" id="saldoTotal">Rp 0</div>
+        </div>
+      </div>
+
+      <section>
+        <h2>Tambah Transaksi</h2>
+        <form id="form-transaksi">
+          <div class="field">
+            <label for="tanggal">Tanggal</label>
+            <input type="date" id="tanggal" required />
+          </div>
+          <div class="field">
+            <label for="deskripsi">Deskripsi</label>
+            <input
+              type="text"
+              id="deskripsi"
+              placeholder="Contoh: Beli ATK"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="kategori">Kategori</label>
+            <select id="kategori">
+              <option value="Besar">Kas Besar</option>
+              <option value="Kecil">Kas Kecil</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipe</label>
+            <div class="toggle-tipe">
+              <input
+                type="radio"
+                name="tipe"
+                id="tipe-tambah"
+                value="tambah"
+                checked
+              />
+              <label for="tipe-tambah" class="tambah">+ Tambah</label>
+              <input type="radio" name="tipe" id="tipe-kurang" value="kurang" />
+              <label for="tipe-kurang" class="kurang">- Kurang</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="nominal">Nominal (Rp)</label>
+            <input
+              type="number"
+              id="nominal"
+              min="1"
+              step="1"
+              placeholder="0"
+              required
+            />
+          </div>
+          <button type="submit" class="btn-submit">Simpan</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Grafik Tren Saldo</h2>
+        <div class="filters" id="filters">
+          <button data-filter="harian" class="active">Harian</button>
+          <button data-filter="mingguan">Mingguan</button>
+          <button data-filter="bulanan">Bulanan</button>
+          <button data-filter="3bln">3 Bulan Lalu</button>
+          <button data-filter="6bln">6 Bulan Lalu</button>
+          <button data-filter="1thn">1 Tahun Lalu</button>
+        </div>
+        <div class="chart-box">
+          <canvas id="kasChart"></canvas>
+        </div>
+      </section>
+
+      <section>
+        <h2>Riwayat Transaksi</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Deskripsi</th>
+                <th>Kategori</th>
+                <th>Tipe</th>
+                <th>Nominal</th>
+                <th>Input Oleh</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tabel-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ---------- Modal Kelola User ---------- -->
+    <div id="modal-user" class="modal-overlay" style="display: none">
+      <div class="modal-box">
+        <h2>
+          Kelola User
+          <button class="modal-close" id="btn-close-modal">&times;</button>
+        </h2>
+
+        <div id="user-list"></div>
+
+        <form class="add-user-form" id="form-add-user">
+          <div class="field">
+            <label for="new-username">Username baru</label>
+            <input
+              type="text"
+              id="new-username"
+              placeholder="username"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="new-password">Password</label>
+            <input
+              type="text"
+              id="new-password"
+              placeholder="password"
+              required
+            />
+          </div>
+          <button type="submit" class="btn-primary">Tambah</button>
+        </form>
+        <div class="msg-box" id="user-msg"></div>
+      </div>
+    </div>
+
+    <!-- ---------- Modal Ubah Password ---------- -->
+    <div id="modal-pass" class="modal-overlay" style="display: none">
+      <div class="modal-box" style="max-width: 360px">
+        <h2>
+          Ubah Password
+          <button class="modal-close" id="btn-close-pass-modal">&times;</button>
+        </h2>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: -8px">
+          User: <strong id="pass-target-username"></strong>
+        </p>
+        <form id="form-change-pass">
+          <div class="field" style="margin-bottom: 14px">
+            <label for="change-password">Password baru</label>
+            <input
+              type="text"
+              id="change-password"
+              placeholder="password baru"
+              required
+            />
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%">
+            Simpan Password
+          </button>
+        </form>
+        <div class="msg-box" id="pass-msg"></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const USERS_KEY = "kasAppUsers";
+        const SESSION_KEY = "kasAppSession";
+        const TX_KEY = "kasAppTransaksi";
+        const TX_BACKUP_KEY = TX_KEY + "_backup";
+        const ADMIN_USERNAME = "Wingchun";
+        const MONTHS_ID = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "Mei",
+          "Jun",
+          "Jul",
+          "Agu",
+          "Sep",
+          "Okt",
+          "Nov",
+          "Des",
+        ];
+
+        // ---------- Users ----------
+        function seedUsersIfEmpty() {
+          const raw = localStorage.getItem(USERS_KEY);
+          if (!raw) {
+            const defaultUsers = [
+              { username: "Wingchun", password: "Wingchun", role: "ADMIN" },
+              { username: "111", password: "111", role: "USER" },
+              { username: "222", password: "222", role: "USER" },
+            ];
+            localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+          }
+        }
+
+        function getUsers() {
+          try {
+            const raw = localStorage.getItem(USERS_KEY);
+            return raw ? JSON.parse(raw) : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function saveUsers(users) {
+          localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+
+        seedUsersIfEmpty();
+
+        // ---------- Session ----------
+        function getSession() {
+          try {
+            const raw = sessionStorage.getItem(SESSION_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function setSession(user) {
+          sessionStorage.setItem(
+            SESSION_KEY,
+            JSON.stringify({ username: user.username, role: user.role }),
+          );
+        }
+
+        function clearSession() {
+          sessionStorage.removeItem(SESSION_KEY);
+        }
+
+        // ---------- Screens ----------
+        const loginScreen = document.getElementById("login-screen");
+        const mainContent = document.getElementById("main-content");
+        const formLogin = document.getElementById("form-login");
+        const loginError = document.getElementById("login-error");
+        const btnLogout = document.getElementById("btn-logout");
+        const btnKelolaUser = document.getElementById("btn-kelola-user");
+        const userChip = document.getElementById("user-chip");
+
+        let currentUser = null;
+        let appInitialized = false;
+
+        function showApp(user) {
+          currentUser = user;
+          loginScreen.style.display = "none";
+          mainContent.style.display = "block";
+          userChip.textContent = `${user.username} (${user.role})`;
+          btnKelolaUser.style.display =
+            user.username === ADMIN_USERNAME ? "inline-flex" : "none";
+          if (!appInitialized) {
+            initApp();
+            appInitialized = true;
+          } else {
+            renderAllRef && renderAllRef();
+          }
+        }
+
+        function showLogin() {
+          currentUser = null;
+          loginScreen.style.display = "flex";
+          mainContent.style.display = "none";
+          closeModal();
+          closePassModal();
+        }
+
+        btnLogout.addEventListener("click", function () {
+          clearSession();
+          showLogin();
+        });
+
+        formLogin.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const username = document
+            .getElementById("login-username")
+            .value.trim();
+          const password = document.getElementById("login-password").value;
+
+          const users = getUsers();
+          const found = users.find(
+            (u) => u.username === username && u.password === password,
+          );
+
+          if (found) {
+            setSession(found);
+            loginError.textContent = "";
+            formLogin.reset();
+            showApp(found);
+          } else {
+            loginError.textContent = "Username atau password salah.";
+          }
+        });
+
+        // ---------- Kelola User Modal ----------
+        const modalUser = document.getElementById("modal-user");
+        const userListEl = document.getElementById("user-list");
+        const formAddUser = document.getElementById("form-add-user");
+        const userMsg = document.getElementById("user-msg");
+        const modalPass = document.getElementById("modal-pass");
+        const formChangePass = document.getElementById("form-change-pass");
+        const passMsg = document.getElementById("pass-msg");
+        const passTargetUsername = document.getElementById(
+          "pass-target-username",
+        );
+        let passTarget = null;
+
+        function openModal() {
+          userMsg.textContent = "";
+          renderUserList();
+          modalUser.style.display = "flex";
+        }
+
+        function closeModal() {
+          modalUser.style.display = "none";
+          formAddUser.reset();
+          userMsg.textContent = "";
+        }
+
+        function openPassModal(username) {
+          passTarget = username;
+          passTargetUsername.textContent = username;
+          passMsg.textContent = "";
+          formChangePass.reset();
+          modalPass.style.display = "flex";
+        }
+
+        function closePassModal() {
+          modalPass.style.display = "none";
+          passTarget = null;
+        }
+
+        btnKelolaUser.addEventListener("click", openModal);
+        document
+          .getElementById("btn-close-modal")
+          .addEventListener("click", closeModal);
+        document
+          .getElementById("btn-close-pass-modal")
+          .addEventListener("click", closePassModal);
+
+        modalUser.addEventListener("click", function (e) {
+          if (e.target === modalUser) closeModal();
+        });
+        modalPass.addEventListener("click", function (e) {
+          if (e.target === modalPass) closePassModal();
+        });
+
+        function renderUserList() {
+          const users = getUsers();
+          userListEl.innerHTML = users
+            .map(
+              (u) => `
+      <div class="user-row">
+        <span class="uname">${escapeHtml(u.username)} <span class="badge ${u.role === "ADMIN" ? "admin" : "user"}">${u.role}</span></span>
+        <div class="user-actions">
+          <button type="button" class="btn-small edit" data-action="changepass" data-username="${escapeHtml(u.username)}">Ubah Password</button>
+          ${u.username === ADMIN_USERNAME ? "" : `<button type="button" class="btn-small" data-action="delete" data-username="${escapeHtml(u.username)}">Hapus</button>`}
+        </div>
+      </div>
+    `,
+            )
+            .join("");
+        }
+
+        userListEl.addEventListener("click", function (e) {
+          const btn = e.target.closest("button[data-action]");
+          if (!btn) return;
+          const username = btn.dataset.username;
+          const action = btn.dataset.action;
+
+          if (action === "changepass") {
+            openPassModal(username);
+          } else if (action === "delete") {
+            if (username === ADMIN_USERNAME) return;
+            if (confirm(`Hapus user "${username}"?`)) {
+              let users = getUsers();
+              users = users.filter((u) => u.username !== username);
+              saveUsers(users);
+              renderUserList();
+              userMsg.className = "msg-box success";
+              userMsg.textContent = `User "${username}" berhasil dihapus.`;
+            }
+          }
+        });
+
+        formAddUser.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const username = document.getElementById("new-username").value.trim();
+          const password = document.getElementById("new-password").value;
+
+          if (!username || !password) {
+            userMsg.className = "msg-box error";
+            userMsg.textContent = "Username dan password wajib diisi.";
+            return;
+          }
+
+          const users = getUsers();
+          if (users.some((u) => u.username === username)) {
+            userMsg.className = "msg-box error";
+            userMsg.textContent = `Username "${username}" sudah dipakai.`;
+            return;
+          }
+
+          users.push({ username, password, role: "USER" });
+          saveUsers(users);
+          formAddUser.reset();
+          renderUserList();
+          userMsg.className = "msg-box success";
+          userMsg.textContent = `User "${username}" berhasil ditambahkan.`;
+        });
+
+        formChangePass.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const newPassword = document.getElementById("change-password").value;
+          if (!newPassword) {
+            passMsg.className = "msg-box error";
+            passMsg.textContent = "Password baru wajib diisi.";
+            return;
+          }
+          const users = getUsers();
+          const target = users.find((u) => u.username === passTarget);
+          if (!target) {
+            passMsg.className = "msg-box error";
+            passMsg.textContent = "User tidak ditemukan.";
+            return;
+          }
+          target.password = newPassword;
+          saveUsers(users);
+          passMsg.className = "msg-box success";
+          passMsg.textContent = `Password untuk "${passTarget}" berhasil diubah.`;
+          setTimeout(closePassModal, 900);
+        });
+
+        function escapeHtml(str) {
+          const div = document.createElement("div");
+          div.textContent = str;
+          return div.innerHTML;
+        }
+
+        // ---------- Main App ----------
+        let renderAllRef = null;
+
+        function initApp() {
+          let transaksi = loadTx();
+          let activeFilter = "harian";
+          let chart = null;
+
+          const form = document.getElementById("form-transaksi");
+          const tanggalInput = document.getElementById("tanggal");
+          const deskripsiInput = document.getElementById("deskripsi");
+          const kategoriInput = document.getElementById("kategori");
+          const nominalInput = document.getElementById("nominal");
+          const tabelBody = document.getElementById("tabel-body");
+          const filtersEl = document.getElementById("filters");
+
+          tanggalInput.value = toDateInputValue(new Date());
+
+          function loadTx() {
+            let primary = null;
+            try {
+              const raw = localStorage.getItem(TX_KEY);
+              const parsed = raw ? JSON.parse(raw) : [];
+              if (Array.isArray(parsed)) primary = parsed;
+            } catch (e) {
+              console.warn("Gagal membaca data transaksi utama:", e);
+            }
+
+            if (primary && primary.length > 0) {
+              return primary;
+            }
+
+            // Primary kosong/rusak: coba pulihkan dari cadangan.
+            try {
+              const rawBackup = localStorage.getItem(TX_BACKUP_KEY);
+              const parsedBackup = rawBackup ? JSON.parse(rawBackup) : null;
+              if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+                console.warn(
+                  "Data transaksi utama kosong/rusak, memulihkan dari cadangan.",
+                );
+                localStorage.setItem(TX_KEY, JSON.stringify(parsedBackup));
+                return parsedBackup;
+              }
+            } catch (e) {
+              console.warn("Gagal membaca cadangan data transaksi:", e);
+            }
+
+            return primary || [];
+          }
+
+          function saveTx() {
+            const data = JSON.stringify(transaksi);
+            localStorage.setItem(TX_KEY, data);
+            localStorage.setItem(TX_BACKUP_KEY, data);
+          }
+
+          function genId() {
+            return crypto.randomUUID
+              ? crypto.randomUUID()
+              : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+          }
+
+          function toDateInputValue(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+          }
+
+          function formatRupiah(num) {
+            const sign = num < 0 ? "-" : "";
+            return (
+              sign + "Rp " + Math.abs(Math.round(num)).toLocaleString("id-ID")
+            );
+          }
+
+          function formatTanggalDisplay(dateStr) {
+            const d = new Date(dateStr + "T00:00:00");
+            return `${String(d.getDate()).padStart(2, "0")} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`;
+          }
+
+          // ---------- Form submit ----------
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const tanggal = tanggalInput.value;
+            const deskripsi = deskripsiInput.value.trim();
+            const kategori = kategoriInput.value;
+            const tipe = document.querySelector(
+              'input[name="tipe"]:checked',
+            ).value;
+            const nominal = parseFloat(nominalInput.value);
+
+            if (!tanggal || !deskripsi || !nominal || nominal <= 0) {
+              alert(
+                "Mohon lengkapi semua field dengan benar. Nominal harus lebih dari 0.",
+              );
+              return;
+            }
+
+            transaksi.push({
+              id: genId(),
+              tanggal,
+              deskripsi,
+              kategori,
+              tipe,
+              nominal,
+              createdAt: Date.now(),
+              inputBy: currentUser ? currentUser.username : "-",
+            });
+
+            saveTx();
+            form.reset();
+            tanggalInput.value = toDateInputValue(new Date());
+            document.getElementById("tipe-tambah").checked = true;
+
+            renderAll();
+          });
+
+          // ---------- Delete ----------
+          tabelBody.addEventListener("click", function (e) {
+            const btn = e.target.closest(".btn-del");
+            if (!btn) return;
+            const id = btn.dataset.id;
+            if (confirm("Hapus transaksi ini?")) {
+              transaksi = transaksi.filter((t) => t.id !== id);
+              saveTx();
+              renderAll();
+            }
+          });
+
+          // ---------- Filters ----------
+          filtersEl.addEventListener("click", function (e) {
+            const btn = e.target.closest("button[data-filter]");
+            if (!btn) return;
+            activeFilter = btn.dataset.filter;
+            [...filtersEl.querySelectorAll("button")].forEach((b) =>
+              b.classList.toggle("active", b === btn),
+            );
+            renderChart();
+          });
+
+          // ---------- Summary ----------
+          function renderSummary() {
+            let besar = 0,
+              kecil = 0;
+            transaksi.forEach((t) => {
+              const amt = t.tipe === "tambah" ? t.nominal : -t.nominal;
+              if (t.kategori === "Besar") besar += amt;
+              else kecil += amt;
+            });
+            document.getElementById("saldoBesar").textContent =
+              formatRupiah(besar);
+            document.getElementById("saldoKecil").textContent =
+              formatRupiah(kecil);
+            document.getElementById("saldoTotal").textContent = formatRupiah(
+              besar + kecil,
+            );
+          }
+
+          // ---------- Table ----------
+          function renderTable() {
+            const sorted = [...transaksi].sort((a, b) => {
+              const d = new Date(b.tanggal) - new Date(a.tanggal);
+              if (d !== 0) return d;
+              return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+
+            if (sorted.length === 0) {
+              tabelBody.innerHTML =
+                '<tr class="empty-row"><td colspan="7">Belum ada transaksi. Tambahkan transaksi pertama Anda di atas.</td></tr>';
+              return;
+            }
+
+            tabelBody.innerHTML = sorted
+              .map(
+                (t) => `
+        <tr>
+          <td>${formatTanggalDisplay(t.tanggal)}</td>
+          <td>${escapeHtml(t.deskripsi)}</td>
+          <td><span class="badge ${t.kategori === "Besar" ? "besar" : "kecil"}">Kas ${t.kategori}</span></td>
+          <td><span class="badge ${t.tipe}">${t.tipe === "tambah" ? "Tambah" : "Kurang"}</span></td>
+          <td class="nominal ${t.tipe}">${t.tipe === "tambah" ? "+" : "-"} ${formatRupiah(t.nominal)}</td>
+          <td>${escapeHtml(t.inputBy || "-")}</td>
+          <td><button class="btn-del" data-id="${t.id}">Hapus</button></td>
+        </tr>
+      `,
+              )
+              .join("");
+          }
+
+          // ---------- Period generation ----------
+          function startOfDay(d) {
+            const x = new Date(d);
+            x.setHours(0, 0, 0, 0);
+            return x;
+          }
+
+          function endOfDay(d) {
+            const x = new Date(d);
+            x.setHours(23, 59, 59, 999);
+            return x;
+          }
+
+          function mondayOf(d) {
+            const x = startOfDay(d);
+            const day = x.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            x.setDate(x.getDate() + diff);
+            return x;
+          }
+
+          function shortDate(d) {
+            return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+          }
+
+          function generateHourPeriods() {
+            const now = new Date();
+            const periods = [];
+            for (let h = 0; h <= now.getHours(); h++) {
+              const end = new Date(now);
+              end.setHours(h, 59, 59, 999);
+              periods.push({ label: `${String(h).padStart(2, "0")}:00`, end });
+            }
+            return periods;
+          }
+
+          function generateDayPeriods(count) {
+            const today = startOfDay(new Date());
+            const periods = [];
+            for (let i = count - 1; i >= 0; i--) {
+              const d = new Date(today);
+              d.setDate(d.getDate() - i);
+              periods.push({ label: shortDate(d), end: endOfDay(d) });
+            }
+            return periods;
+          }
+
+          function generateWeekPeriods(count) {
+            const thisMonday = mondayOf(new Date());
+            const periods = [];
+            for (let i = count - 1; i >= 0; i--) {
+              const mon = new Date(thisMonday);
+              mon.setDate(mon.getDate() - i * 7);
+              const sun = new Date(mon);
+              sun.setDate(sun.getDate() + 6);
+              periods.push({
+                label: `${shortDate(mon)}-${shortDate(sun)}`,
+                end: endOfDay(sun),
+              });
+            }
+            return periods;
+          }
+
+          function generateMonthPeriods(count) {
+            const now = new Date();
+            const periods = [];
+            for (let i = count - 1; i >= 0; i--) {
+              const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
+              const lastDay = new Date(
+                first.getFullYear(),
+                first.getMonth() + 1,
+                0,
+              );
+              periods.push({
+                label: `${MONTHS_ID[first.getMonth()]} ${first.getFullYear()}`,
+                end: endOfDay(lastDay),
+              });
+            }
+            return periods;
+          }
+
+          const FILTER_CONFIG = {
+            harian: { gen: () => generateHourPeriods() },
+            mingguan: { gen: () => generateDayPeriods(7) },
+            bulanan: { gen: () => generateDayPeriods(30) },
+            "3bln": { gen: () => generateWeekPeriods(13) },
+            "6bln": { gen: () => generateWeekPeriods(26) },
+            "1thn": { gen: () => generateMonthPeriods(12) },
+          };
+
+          // Builds cumulative saldo (running balance) per period, carrying full history forward.
+          function buildSeries(periods) {
+            const sorted = [...transaksi].sort((a, b) => {
+              const d = new Date(a.tanggal) - new Date(b.tanggal);
+              if (d !== 0) return d;
+              return (a.createdAt || 0) - (b.createdAt || 0);
+            });
+            let idx = 0,
+              besar = 0,
+              kecil = 0;
+
+            return periods.map((p) => {
+              while (
+                idx < sorted.length &&
+                new Date(sorted[idx].tanggal + "T00:00:00") <= p.end
+              ) {
+                const t = sorted[idx];
+                const amt = t.tipe === "tambah" ? t.nominal : -t.nominal;
+                if (t.kategori === "Besar") besar += amt;
+                else kecil += amt;
+                idx++;
+              }
+              return { label: p.label, besar, kecil, total: besar + kecil };
+            });
+          }
+
+          // ---------- Chart ----------
+          function renderChart() {
+            const cfg = FILTER_CONFIG[activeFilter];
+            const periods = cfg.gen();
+            const series = buildSeries(periods);
+
+            const labels = series.map((s) => s.label);
+            const dataBesar = series.map((s) => s.besar);
+            const dataKecil = series.map((s) => s.kecil);
+            const dataTotal = series.map((s) => s.total);
+
+            if (chart) {
+              chart.data.labels = labels;
+              chart.data.datasets[0].data = dataBesar;
+              chart.data.datasets[1].data = dataKecil;
+              chart.data.datasets[2].data = dataTotal;
+              chart.update();
+              return;
+            }
+
+            const ctx = document.getElementById("kasChart").getContext("2d");
+            chart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Kas Besar",
+                    data: dataBesar,
+                    borderColor: "#818cf8",
+                    backgroundColor: "rgba(129,140,248,0.15)",
+                    tension: 0.3,
+                    fill: false,
+                  },
+                  {
+                    label: "Kas Kecil",
+                    data: dataKecil,
+                    borderColor: "#f59e0b",
+                    backgroundColor: "rgba(245,158,11,0.15)",
+                    tension: 0.3,
+                    fill: false,
+                  },
+                  {
+                    label: "Total Saldo",
+                    data: dataTotal,
+                    borderColor: "#22c55e",
+                    backgroundColor: "rgba(34,197,94,0.15)",
+                    tension: 0.3,
+                    fill: false,
+                    borderWidth: 3,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                  legend: { labels: { color: "#e2e8f0" } },
+                  tooltip: {
+                    callbacks: {
+                      label: (ctx) =>
+                        `${ctx.dataset.label}: ${formatRupiah(ctx.parsed.y)}`,
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    ticks: { color: "#94a3b8" },
+                    grid: { color: "#334155" },
+                  },
+                  y: {
+                    ticks: {
+                      color: "#94a3b8",
+                      callback: (v) => formatRupiah(v),
+                    },
+                    grid: { color: "#334155" },
+                  },
+                },
+              },
+            });
+          }
+
+          function renderAll() {
+            renderSummary();
+            renderTable();
+            renderChart();
+          }
+
+          renderAllRef = renderAll;
+          renderAll();
+        }
+
+        // ---------- Bootstrap: cek sesi & tampilkan layar yang sesuai ----------
+        const existingSession = getSession();
+        if (existingSession) {
+          const users = getUsers();
+          const stillExists = users.find(
+            (u) => u.username === existingSession.username,
+          );
+          if (stillExists) {
+            showApp(stillExists);
+          } else {
+            clearSession();
+            showLogin();
+          }
+        } else {
+          showLogin();
+        }
+      })();
+    </script>
+  </body>
+</html>
